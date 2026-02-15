@@ -35,6 +35,34 @@ export interface Employee {
   updatedAt?: string;
 }
 
+export interface EmployeeFormData {
+  name: string;
+  fatherName?: string;
+  spouseName?: string;
+  currentPlace?: string;
+  currentPost?: string;
+  currentAddress?: string;
+  phoneNumbers: string[];
+  permanentSameAsCurrent: number;
+  permanentPlace?: string;
+  permanentPost?: string;
+  permanentAddress?: string;
+  emergencyContactName?: string;
+  emergencyContactRelation?: string;
+  emergencyContactPhone?: string;
+  policeStation?: string;
+  experience?: string;
+  jobPost?: string;
+  employmentStatus: EmployeeStatus;
+  joiningDate?: string;
+  exitDate?: string;
+  essid?: string;
+  photoPath?: string;
+  dateOfBirth?: string;
+  uan?: string;
+  esiip?: string;
+}
+
 export interface FilterOptions {
   name?: string;
   post?: string;

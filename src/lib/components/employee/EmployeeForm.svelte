@@ -1,31 +1,35 @@
 <script lang="ts">
+    import {
+        X,
+        Save,
+        Plus,
+        User,
+        Phone,
+        House,
+        Upload,
+        Trash2,
+        FileText,
+        Briefcase,
+    } from "lucide-svelte";
+    import {
+        Avatar,
+        AvatarImage,
+        AvatarFallback,
+    } from "$lib/components/ui/avatar";
     import { invoke } from "@tauri-apps/api/core";
-    import { open } from "@tauri-apps/plugin-dialog";
     import * as Card from "$lib/components/ui/card";
-    import * as Select from "$lib/components/ui/select";
-    import { Button } from "$lib/components/ui/button";
+    import { open } from "@tauri-apps/plugin-dialog";
     import { Input } from "$lib/components/ui/input";
     import { Label } from "$lib/components/ui/label";
+    import { Button } from "$lib/components/ui/button";
+    import * as Select from "$lib/components/ui/select";
     import { Textarea } from "$lib/components/ui/textarea";
     import { Checkbox } from "$lib/components/ui/checkbox";
     import {
-        Avatar,
-        AvatarFallback,
-        AvatarImage,
-    } from "$lib/components/ui/avatar";
-    import {
-        Save,
-        X,
-        Upload,
-        Plus,
-        Trash2,
-        User,
-        Phone,
-        Briefcase,
-        FileText,
-        House,
-    } from "lucide-svelte";
-    import { EmployeeStatus, type Employee } from "$lib/types/employee";
+        EmployeeStatus,
+        type Employee,
+        type EmployeeFormData,
+    } from "$lib/types/employee";
 
     interface Props {
         onCancel: () => void;
@@ -36,7 +40,7 @@
     let { onCancel, onSave, initialData = null }: Props = $props();
 
     // Form state
-    let formData = $state<Employee>({
+    let formData = $state<EmployeeFormData>({
         name: initialData?.name || "",
         fatherName: initialData?.fatherName || "",
         spouseName: initialData?.spouseName || "",
@@ -45,9 +49,8 @@
         currentAddress: initialData?.currentAddress || "",
         phoneNumbers: initialData?.phoneNumbers
             ? JSON.parse(initialData.phoneNumbers)
-            : [""],
-        permanentSameAsCurrent:
-            initialData?.permanentSameAsCurrent === 1 ? true : false,
+            : [],
+        permanentSameAsCurrent: initialData?.permanentSameAsCurrent || 0,
         permanentPlace: initialData?.permanentPlace || "",
         permanentPost: initialData?.permanentPost || "",
         permanentAddress: initialData?.permanentAddress || "",
@@ -70,16 +73,14 @@
 
     let errors = $state<Record<string, string>>({});
     let saving = $state(false);
-    let photoPreview = $state(initialData?.photoPath || "");
+    let photoPreview = $derived(initialData?.photoPath || "");
 
-    // Employment status options
     const employmentStatusOptions = [
-        { value: "applied", label: "Applied" },
-        { value: "current", label: "Current Employee" },
-        { value: "past", label: "Past Employee" },
+        { value: EmployeeStatus.APPLIED, label: "Applied" },
+        { value: EmployeeStatus.CURRENT, label: "Current" },
+        { value: EmployeeStatus.PAST, label: "Past" },
     ];
 
-    // Add phone number field
     function addPhoneNumber() {
         formData.phoneNumbers = [...formData.phoneNumbers, ""];
     }
@@ -466,7 +467,9 @@
                         <div class="flex items-center space-x-2">
                             <Checkbox
                                 id="sameAddress"
-                                bind:checked={formData.permanentSameAsCurrent}
+                                bind:checked={
+                                    formData.permanentSameAsCurrent as unknown as boolean
+                                }
                             />
                             <Label
                                 for="sameAddress"
@@ -484,7 +487,7 @@
                                 id="permanentPlace"
                                 bind:value={formData.permanentPlace}
                                 placeholder="City/Village name"
-                                disabled={formData.permanentSameAsCurrent}
+                                disabled={!!formData.permanentSameAsCurrent}
                             />
                         </div>
 
@@ -494,7 +497,7 @@
                                 id="permanentPost"
                                 bind:value={formData.permanentPost}
                                 placeholder="Post office name"
-                                disabled={formData.permanentSameAsCurrent}
+                                disabled={!!formData.permanentSameAsCurrent}
                             />
                         </div>
 
@@ -505,7 +508,7 @@
                                 bind:value={formData.permanentAddress}
                                 placeholder="House number, street, landmark"
                                 rows={3}
-                                disabled={formData.permanentSameAsCurrent}
+                                disabled={!!formData.permanentSameAsCurrent}
                             />
                         </div>
                     </div>
@@ -564,6 +567,28 @@
                                 >Employment Status</Label
                             >
                             <Select.Root
+                                type="single"
+                                name="employmentStatus"
+                                bind:value={formData.employmentStatus}
+                            >
+                                <Select.Trigger class="h-9 w-full">
+                                    <span class="truncate">
+                                        {employmentStatusOptions.find(
+                                            (o) =>
+                                                o.value ===
+                                                formData.employmentStatus,
+                                        )?.label || "Status"}
+                                    </span>
+                                </Select.Trigger>
+                                <Select.Content>
+                                    {#each employmentStatusOptions as option}
+                                        <Select.Item value={option.value}
+                                            >{option.label}</Select.Item
+                                        >
+                                    {/each}
+                                </Select.Content>
+                            </Select.Root>
+                            <!-- <Select.Root
                                 selected={employmentStatusOptions.find(
                                     (o) =>
                                         o.value === formData.employmentStatus,
@@ -586,7 +611,7 @@
                                         >
                                     {/each}
                                 </Select.Content>
-                            </Select.Root>
+                            </Select.Root> -->
                         </div>
 
                         <div class="space-y-2">

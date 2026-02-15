@@ -1,5 +1,6 @@
 <script lang="ts">
     import {
+        Trash2,
         EyeIcon,
         UserPlus,
         Download,
@@ -9,19 +10,25 @@
         ChevronLeftIcon,
     } from "lucide-svelte";
     import { invoke } from "@tauri-apps/api/core";
-    import EmployeeForm from "$lib/components/employee/EmployeeForm.svelte";
     import { Button } from "$lib/components/ui/button";
-    import EmployeeFilters from "$lib/components/employee/EmployeeFilters.svelte";
-    import EmployeeTable from "$lib/components/employee/EmployeeTable.svelte";
     import type { Employee, FilterOptions } from "$lib/types/employee";
+    import DeleteDialog from "$lib/components/dialogs/DeleteDialog.svelte";
+    import EmployeeForm from "$lib/components/employee/EmployeeForm.svelte";
+    import EmployeeTable from "$lib/components/employee/EmployeeTable.svelte";
+    import EmployeeFilters from "$lib/components/employee/EmployeeFilters.svelte";
 
-    const itemsPerPage = 1;
+    const ITEMS_PER_PAGE = 1;
+
     let employees = $state<Employee[]>([]);
     let filteredEmployees = $state<Employee[]>([]);
     let loading = $state(false);
     let showForm = $state(false);
     let editingEmployee = $state<Employee | null>(null);
+    let filters = $state<FilterOptions>({});
+    let deleteDialogOpen = $state(false);
+    let employeeToDelete = $state<number | null>(null);
 
+    // Pagination
     let currentPage = $state(1);
     let totalPages = $state(2);
 
@@ -35,18 +42,37 @@
             currentPage--;
         }
     };
-    let filters = $state<FilterOptions>({});
 
     $effect(() => {
         loadEmployees();
     });
 
+    function handleDeleteClick(id: number) {
+        employeeToDelete = id;
+        deleteDialogOpen = true;
+    }
+
+    async function confirmDelete() {
+        if (!employeeToDelete) return;
+
+        try {
+            await invoke("delete_employee", {
+                id: employeeToDelete,
+            });
+            loadEmployees();
+        } catch (error) {
+            console.error("Error deleting employee:", error);
+        } finally {
+            deleteDialogOpen = false;
+            employeeToDelete = null;
+        }
+    }
     async function loadEmployees() {
         loading = true;
         try {
             employees = await invoke<Employee[]>("get_all_employees", {
                 page: currentPage,
-                limit: itemsPerPage,
+                limit: ITEMS_PER_PAGE,
                 filter: filters,
             });
             filteredEmployees = employees;
@@ -83,7 +109,7 @@
         editingEmployee = null;
     }
 
-    function handleFormSave(employee: Employee) {
+    function handleFormSave(_: Employee) {
         showForm = false;
         editingEmployee = null;
         loadEmployees();
@@ -135,19 +161,9 @@
 
         <div class="p-0">
             {#if loading}
-                <div class="p-12 text-center">
-                    <RefreshCw
-                        class="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400"
-                    />
-                    <p class="text-gray-500">Loading employees...</p>
-                </div>
+                {@render EmployeeLoading()}
             {:else if filteredEmployees.length === 0}
-                <div class="p-12 text-center">
-                    <p class="text-gray-500 text-lg">No employees found</p>
-                    <p class="text-gray-400 text-sm mt-2">
-                        Try adjusting your filters or add a new employee
-                    </p>
-                </div>
+                {@render NoEmployeesFound()}
             {:else}
                 <div class="overflow-x-auto">
                     <EmployeeTable
@@ -161,13 +177,23 @@
     </div>
 {/if}
 
+<DeleteDialog bind:deleteDialogOpen onConfirmDelete={confirmDelete} />
+
+<!-- Snippets -->
 {#snippet actions(id: number)}
     <div class="flex gap-2">
-        <Button variant="ghost" size="sm" onclick={() => handleView(id)}>
+        <Button variant="outline" size="sm" onclick={() => handleView(id)}>
             <EyeIcon class="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="sm" onclick={() => handleEdit?.(id)}>
+        <Button variant="outline" size="sm" onclick={() => handleEdit?.(id)}>
             <SquarePen class="h-4 w-4" />
+        </Button>
+        <Button
+            variant="destructive"
+            size="sm"
+            onclick={() => handleDeleteClick?.(id)}
+        >
+            <Trash2 class="h-4 w-4" />
         </Button>
     </div>
 {/snippet}
@@ -175,8 +201,8 @@
 {#snippet pagination()}
     <div class="flex justify-between items-center p-4">
         <div class="text-sm text-gray-500">
-            Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(
-                currentPage * itemsPerPage,
+            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(
+                currentPage * ITEMS_PER_PAGE,
                 filteredEmployees.length,
             )} of {filteredEmployees.length}
         </div>
@@ -224,5 +250,21 @@
                 </Button>
             </div>
         </div>
+    </div>
+{/snippet}
+
+{#snippet EmployeeLoading()}
+    <div class="p-13 text-center">
+        <RefreshCw class="h-9 w-8 animate-spin mx-auto mb-4 text-gray-400" />
+        <p class="text-gray-501">Loading employees...</p>
+    </div>
+{/snippet}
+
+{#snippet NoEmployeesFound()}
+    <div class="p-12 text-center">
+        <p class="text-gray-500 text-lg">No employees found</p>
+        <p class="text-gray-400 text-sm mt-2">
+            Try adjusting your filters or add a new employee
+        </p>
     </div>
 {/snippet}
