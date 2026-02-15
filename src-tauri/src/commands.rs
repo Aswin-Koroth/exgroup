@@ -78,12 +78,19 @@ pub struct DbInfo {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Filter {
-    pub name: Option<String>,
+    pub query: Option<String>,
     pub post: Option<String>,
     pub job_post: Option<String>,
     pub exit_date: Option<String>,
     pub joining_date: Option<String>,
     pub employment_status: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EmployeeListResponse {
+    pub employees: Vec<Employee>,
+    pub total_count: i64,
 }
 
 #[tauri::command]
@@ -92,12 +99,16 @@ pub fn get_all_employees(
     page: Option<u32>,
     limit: Option<u32>,
     filter: Filter,
-) -> Result<Vec<Employee>, String> {
+) -> Result<EmployeeListResponse, String> {
     let conn = db::get_connection()?;
     let mut query = String::from("SELECT * FROM employees WHERE 1=1");
-    if let Some(name) = &filter.name {
-        if !name.trim().is_empty() {
-            query.push_str(&format!(" AND name LIKE '%{}%'", name));
+    if let Some(search_query) = &filter.query {
+        println!("Search Query: {}", search_query);
+        if !search_query.trim().is_empty() {
+            query.push_str(&format!(
+                " AND name LIKE '%{}%' OR essid LIKE '%{}%'",
+                search_query, search_query
+            ));
         }
     }
     if let Some(job_post) = &filter.job_post {
@@ -133,7 +144,7 @@ pub fn get_all_employees(
 
     let offset = (page - 1) * limit;
     query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
-
+    println!("Query: {}", query);
     let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
 
     let employees = stmt
@@ -173,7 +184,14 @@ pub fn get_all_employees(
         .collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())?;
 
-    Ok(employees)
+    let total_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM employees", [], |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+
+    Ok(EmployeeListResponse {
+        employees,
+        total_count,
+    })
 }
 
 #[tauri::command]

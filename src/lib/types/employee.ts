@@ -35,6 +35,11 @@ export interface Employee {
   updatedAt?: string;
 }
 
+export interface EmployeeListResponse {
+  employees: Employee[];
+  totalCount: number;
+}
+
 export interface EmployeeFormData {
   name: string;
   fatherName?: string;
@@ -64,7 +69,7 @@ export interface EmployeeFormData {
 }
 
 export interface FilterOptions {
-  name?: string;
+  query?: string;
   post?: string;
   jobPost?: string;
   exitDate?: string;

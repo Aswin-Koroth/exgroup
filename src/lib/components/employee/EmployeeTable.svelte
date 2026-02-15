@@ -1,13 +1,14 @@
 <script lang="ts">
     import * as Table from "$lib/components/ui/table";
     import type { Employee } from "$lib/types/employee";
-    import { calculateAge, getInitials } from "$lib/utils";
+    import { calculateAge, copyToClipboard, getInitials } from "$lib/utils";
     import type { Snippet } from "svelte";
     import StatusBadge from "../StatusBadge.svelte";
     import AvatarFallback from "../ui/avatar/avatar-fallback.svelte";
     import AvatarImage from "../ui/avatar/avatar-image.svelte";
     import Avatar from "../ui/avatar/avatar.svelte";
-    import { Phone } from "lucide-svelte";
+    import { Copy, Phone } from "lucide-svelte";
+    import { toast } from "svelte-sonner";
 
     interface Props {
         employees: Employee[];
@@ -24,6 +25,11 @@
         } catch {
             return [];
         }
+    }
+
+    function handlePhoneCopy(phone: string) {
+        copyToClipboard(phone);
+        toast.success("Phone number copied to clipboard");
     }
 </script>
 
@@ -63,7 +69,13 @@
                             <div>
                                 <div class="font-semibold">{employee.name}</div>
                                 <div class="text-xs text-gray-500">
-                                    {employee.essid || "No ESSID"}
+                                    {#if employee.essid}
+                                        ESSID: <span class="font-semibold"
+                                            >{employee.essid}</span
+                                        >
+                                    {:else}
+                                        No ESSID
+                                    {/if}
                                 </div>
                             </div>
                         </div>
@@ -88,13 +100,16 @@
                                 <div class="flex items-center gap-1">
                                     <Phone class="h-3 w-3 text-gray-400" />
                                     {phone}
+                                    <Copy
+                                        class="h-3 w-3 text-gray-400 hover:text-gray-600"
+                                        onclick={() => handlePhoneCopy(phone)}
+                                    />
                                 </div>
                             {/each}
-                            {#if parsePhoneNumbers(employee.phoneNumbers).slice(0, 2).length > 2}
+                            {#if parsePhoneNumbers(employee.phoneNumbers).length > 2}
                                 <div class="text-xs text-gray-500">
-                                    +{parsePhoneNumbers(
-                                        employee.phoneNumbers,
-                                    ).slice(0, 2).length - 2} more
+                                    +{parsePhoneNumbers(employee.phoneNumbers)
+                                        .length - 2} more
                                 </div>
                             {/if}
                         </div></Table.Cell

@@ -9,17 +9,25 @@
         ChevronRightIcon,
         ChevronLeftIcon,
     } from "lucide-svelte";
+    import type {
+        Employee,
+        FilterOptions,
+        EmployeeListResponse,
+    } from "$lib/types/employee";
+    import { toast } from "svelte-sonner";
     import { invoke } from "@tauri-apps/api/core";
     import { Button } from "$lib/components/ui/button";
-    import type { Employee, FilterOptions } from "$lib/types/employee";
     import DeleteDialog from "$lib/components/dialogs/DeleteDialog.svelte";
     import EmployeeForm from "$lib/components/employee/EmployeeForm.svelte";
     import EmployeeTable from "$lib/components/employee/EmployeeTable.svelte";
     import EmployeeFilters from "$lib/components/employee/EmployeeFilters.svelte";
 
-    const ITEMS_PER_PAGE = 1;
+    const ITEMS_PER_PAGE = 2;
 
-    let employees = $state<Employee[]>([]);
+    let employeeListResponse = $state<EmployeeListResponse>({
+        employees: [],
+        totalCount: 0,
+    });
     let filteredEmployees = $state<Employee[]>([]);
     let loading = $state(false);
     let showForm = $state(false);
@@ -30,7 +38,7 @@
 
     // Pagination
     let currentPage = $state(1);
-    let totalPages = $state(2);
+    let totalPages = $state(1);
 
     let nextPage = () => {
         if (currentPage < totalPages) {
@@ -59,6 +67,7 @@
             await invoke("delete_employee", {
                 id: employeeToDelete,
             });
+            toast.success("Employee deleted successfully");
             loadEmployees();
         } catch (error) {
             console.error("Error deleting employee:", error);
@@ -70,12 +79,18 @@
     async function loadEmployees() {
         loading = true;
         try {
-            employees = await invoke<Employee[]>("get_all_employees", {
-                page: currentPage,
-                limit: ITEMS_PER_PAGE,
-                filter: filters,
-            });
-            filteredEmployees = employees;
+            employeeListResponse = await invoke<EmployeeListResponse>(
+                "get_all_employees",
+                {
+                    page: currentPage,
+                    limit: ITEMS_PER_PAGE,
+                    filter: filters,
+                },
+            );
+            filteredEmployees = employeeListResponse.employees;
+            totalPages = Math.ceil(
+                employeeListResponse.totalCount / ITEMS_PER_PAGE,
+            );
         } catch (error) {
             console.error("Error loading employees:", error);
         } finally {
@@ -84,7 +99,7 @@
     }
 
     function handleView(id: number) {
-        const employee = employees.find((e) => e.id === id);
+        const employee = filteredEmployees.find((e) => e.id === id);
         if (employee) {
             editingEmployee = employee;
             showForm = true;
@@ -92,7 +107,7 @@
     }
 
     function handleEdit(id: number) {
-        const employee = employees.find((e) => e.id === id);
+        const employee = filteredEmployees.find((e) => e.id === id);
         if (employee) {
             editingEmployee = employee;
             showForm = true;
@@ -203,8 +218,8 @@
         <div class="text-sm text-gray-500">
             Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(
                 currentPage * ITEMS_PER_PAGE,
-                filteredEmployees.length,
-            )} of {filteredEmployees.length}
+                employeeListResponse.totalCount,
+            )} of {employeeListResponse.totalCount}
         </div>
         <div class="flex gap-2">
             <div class="flex items-center gap-2">

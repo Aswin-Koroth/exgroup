@@ -35,3 +35,7 @@ export function getInitials(name: string): string {
   const initials = words.map((word) => word.charAt(0).toUpperCase()).join("");
   return initials;
 }
+
+export function copyToClipboard(text: string): void {
+  navigator.clipboard.writeText(text);
+}

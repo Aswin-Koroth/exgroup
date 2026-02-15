@@ -1,8 +1,9 @@
 <script lang="ts">
     import "../app.css";
+    import { cn } from "$lib/utils";
+    import { Toaster } from "$lib/components/ui/sonner";
     import { isSidebarOpen } from "$lib/stores/navigation";
     import Sidebar from "$lib/components/sidebar/Sidebar.svelte";
-    import { cn } from "$lib/utils";
 
     interface Props {
         children?: any;
@@ -10,6 +11,8 @@
 
     let { children }: Props = $props();
 </script>
+
+<Toaster position="bottom-right" />
 
 <div class="min-h-screen bg-gray-50">
     <Sidebar />

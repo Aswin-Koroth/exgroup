@@ -27,14 +27,14 @@
 <Card.Root class="shadow-sm border-muted">
     <Card.Content class="p-3">
         <div class="flex flex-col xl:flex-row gap-3">
-            <div class="relative flex-1 min-w-[200px]">
+            <div class="relative flex-1 min-w-50">
                 <Search
                     class="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
                 />
                 <Input
                     type="text"
-                    bind:value={filters.name}
-                    placeholder="Search by name..."
+                    bind:value={filters.query}
+                    placeholder="Search by name or ESSID"
                     class="pl-9 h-9 bg-background"
                 />
             </div>
@@ -42,7 +42,7 @@
             <div
                 class="grid grid-cols-2 md:grid-cols-4 xl:flex gap-2 flex-wrap items-center"
             >
-                <div class="w-full md:w-[160px]">
+                <div class="w-full md:w-40">
                     <Select.Root
                         type="single"
                         name="employmentStatus"
@@ -78,7 +78,7 @@
                     />
                 </div> -->
 
-                <div class="relative w-full md:w-[140px]">
+                <div class="relative w-full md:w-35">
                     <MapPinHouseIcon
                         class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
                     />
@@ -90,7 +90,7 @@
                     />
                 </div>
 
-                <div class="relative w-full md:w-[140px]">
+                <div class="relative w-full md:w-35">
                     <Calendar
                         class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
                     />
@@ -104,7 +104,7 @@
                     />
                 </div>
 
-                <div class="relative w-full md:w-[140px]">
+                <div class="relative w-full md:w-35">
                     <Calendar
                         class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
                     />

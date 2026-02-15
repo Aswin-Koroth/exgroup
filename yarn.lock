@@ -912,6 +912,14 @@ magic-string@^0.30.11, magic-string@^0.30.17, magic-string@^0.30.21, magic-strin
   dependencies:
     "@jridgewell/sourcemap-codec" "^1.5.5"
 
+mode-watcher@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/mode-watcher/-/mode-watcher-1.1.0.tgz#a83e43b3ebac0e23f01016123e309a464cb26643"
+  integrity sha512-mUT9RRGPDYenk59qJauN1rhsIMKBmWA3xMF+uRwE8MW/tjhaDSCCARqkSuDTq8vr4/2KcAxIGVjACxTjdk5C3g==
+  dependencies:
+    runed "^0.25.0"
+    svelte-toolbelt "^0.7.1"
+
 mri@^1.1.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/mri/-/mri-1.2.0.tgz#6721480fec2a11a4889861115a48b6cbe7cc8f0b"
@@ -1008,6 +1016,27 @@ rollup@^4.34.9:
     "@rollup/rollup-win32-x64-msvc" "4.57.1"
     fsevents "~2.3.2"
 
+runed@^0.23.2:
+  version "0.23.4"
+  resolved "https://registry.yarnpkg.com/runed/-/runed-0.23.4.tgz#0b68fd24434e65dd8cbd9f7072521d6f5f409eba"
+  integrity sha512-9q8oUiBYeXIDLWNK5DfCWlkL0EW3oGbk845VdKlPeia28l751VpfesaB/+7pI6rnbx1I6rqoZ2fZxptOJLxILA==
+  dependencies:
+    esm-env "^1.0.0"
+
+runed@^0.25.0:
+  version "0.25.0"
+  resolved "https://registry.yarnpkg.com/runed/-/runed-0.25.0.tgz#dad779435734eb4d2bbab85798e2da36e1bd7af4"
+  integrity sha512-7+ma4AG9FT2sWQEA0Egf6mb7PBT2vHyuHail1ie8ropfSjvZGtEAx8YTmUjv/APCsdRRxEVvArNjALk9zFSOrg==
+  dependencies:
+    esm-env "^1.0.0"
+
+runed@^0.28.0:
+  version "0.28.0"
+  resolved "https://registry.yarnpkg.com/runed/-/runed-0.28.0.tgz#68e2ec076ae921f5e7ca0ebaa37e9f6598775c3c"
+  integrity sha512-k2xx7RuO9hWcdd9f+8JoBeqWtYrm5CALfgpkg2YDB80ds/QE4w0qqu34A7fqiAwiBBSBQOid7TLxwxVC27ymWQ==
+  dependencies:
+    esm-env "^1.0.0"
+
 runed@^0.35.1:
   version "0.35.1"
   resolved "https://registry.yarnpkg.com/runed/-/runed-0.35.1.tgz#e7e424aaa18d4e585a9e7b2d948c2b0860858c74"
@@ -1070,6 +1099,13 @@ svelte-check@^4.0.0:
     picocolors "^1.0.0"
     sade "^1.7.4"
 
+svelte-sonner@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/svelte-sonner/-/svelte-sonner-1.0.7.tgz#7b8a9b99d60e28fd8e2826e42acc29089f2dc0f7"
+  integrity sha512-1EUFYmd7q/xfs2qCHwJzGPh9n5VJ3X6QjBN10fof2vxgy8fYE7kVfZ7uGnd7i6fQaWIr5KvXcwYXE/cmTEjk5A==
+  dependencies:
+    runed "^0.28.0"
+
 svelte-toolbelt@^0.10.6:
   version "0.10.6"
   resolved "https://registry.yarnpkg.com/svelte-toolbelt/-/svelte-toolbelt-0.10.6.tgz#573e25a69cdef3c3eb2bb6762e6c63b4db2d3355"
@@ -1077,6 +1113,15 @@ svelte-toolbelt@^0.10.6:
   dependencies:
     clsx "^2.1.1"
     runed "^0.35.1"
+    style-to-object "^1.0.8"
+
+svelte-toolbelt@^0.7.1:
+  version "0.7.1"
+  resolved "https://registry.yarnpkg.com/svelte-toolbelt/-/svelte-toolbelt-0.7.1.tgz#63e9c6629456a1a0dd57812f85426e4631fd754e"
+  integrity sha512-HcBOcR17Vx9bjaOceUvxkY3nGmbBmCBBbuWLLEWO6jtmWH8f/QoWmbyUfQZrpDINH39en1b8mptfPQT9VKQ1xQ==
+  dependencies:
+    clsx "^2.1.1"
+    runed "^0.23.2"
     style-to-object "^1.0.8"
 
 svelte@^5.0.0:
