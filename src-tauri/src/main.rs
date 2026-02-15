@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    xgroup_lib::run()
+    exgroup_lib::run()
 }

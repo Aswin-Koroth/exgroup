@@ -352,7 +352,6 @@ pub fn create_database_backup(_state: State<AppState>) -> Result<String, String>
     let conn = db::get_connection()?;
     let db_path = db::get_db_path()?;
 
-    // Get backup directory (in app data dir)
     let backup_dir = db_path
         .parent()
         .ok_or_else(|| "Failed to get database directory".to_string())?

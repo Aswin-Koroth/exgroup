@@ -5,16 +5,13 @@ use std::path::PathBuf;
 
 /// Create a backup of the database
 pub fn create_backup(conn: &Connection, backup_dir: &PathBuf) -> Result<PathBuf, String> {
-    // Create backup directory if it doesn't exist
     fs::create_dir_all(backup_dir)
         .map_err(|e| format!("Failed to create backup directory: {}", e))?;
 
-    // Generate backup filename with timestamp
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");
     let backup_filename = format!("employee_management_backup_{}.db", timestamp);
     let backup_path = backup_dir.join(backup_filename);
 
-    // Perform backup using SQLite's backup API
     let mut backup_conn = Connection::open(&backup_path)
         .map_err(|e| format!("Failed to create backup connection: {}", e))?;
 
@@ -43,7 +40,6 @@ pub fn clean_old_backups(backup_dir: &PathBuf, keep_count: usize) -> Result<(), 
         })
         .collect();
 
-    // Sort by modification time (newest first)
     backups.sort_by(|a, b| {
         let a_time = fs::metadata(a).and_then(|m| m.modified()).ok();
         let b_time = fs::metadata(b).and_then(|m| m.modified()).ok();

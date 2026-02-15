@@ -25,7 +25,7 @@
         FileText,
         House,
     } from "lucide-svelte";
-    import type { Employee } from "$lib/types/employee";
+    import { EmployeeStatus, type Employee } from "$lib/types/employee";
 
     interface Props {
         onCancel: () => void;
@@ -36,7 +36,7 @@
     let { onCancel, onSave, initialData = null }: Props = $props();
 
     // Form state
-    let formData = $state({
+    let formData = $state<Employee>({
         name: initialData?.name || "",
         fatherName: initialData?.fatherName || "",
         spouseName: initialData?.spouseName || "",
@@ -47,7 +47,7 @@
             ? JSON.parse(initialData.phoneNumbers)
             : [""],
         permanentSameAsCurrent:
-            initialData?.permanentSameAsCurrent === 1 || false,
+            initialData?.permanentSameAsCurrent === 1 ? true : false,
         permanentPlace: initialData?.permanentPlace || "",
         permanentPost: initialData?.permanentPost || "",
         permanentAddress: initialData?.permanentAddress || "",
@@ -57,7 +57,8 @@
         policeStation: initialData?.policeStation || "",
         experience: initialData?.experience || "",
         jobPost: initialData?.jobPost || "",
-        employmentStatus: initialData?.employmentStatus || "applied",
+        employmentStatus:
+            initialData?.employmentStatus || EmployeeStatus.APPLIED,
         joiningDate: initialData?.joiningDate || "",
         exitDate: initialData?.exitDate || "",
         essid: initialData?.essid || "",
