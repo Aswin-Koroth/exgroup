@@ -1,14 +1,15 @@
 <script lang="ts">
+    import { toast } from "svelte-sonner";
+    import type { Snippet } from "svelte";
+    import { Copy, Phone } from "lucide-svelte";
+    import Avatar from "../ui/avatar/avatar.svelte";
+    import StatusBadge from "../StatusBadge.svelte";
     import * as Table from "$lib/components/ui/table";
     import type { Employee } from "$lib/types/employee";
-    import { calculateAge, copyToClipboard, getInitials } from "$lib/utils";
-    import type { Snippet } from "svelte";
-    import StatusBadge from "../StatusBadge.svelte";
-    import AvatarFallback from "../ui/avatar/avatar-fallback.svelte";
+    import { convertFileSrc } from "@tauri-apps/api/core";
     import AvatarImage from "../ui/avatar/avatar-image.svelte";
-    import Avatar from "../ui/avatar/avatar.svelte";
-    import { Copy, Phone } from "lucide-svelte";
-    import { toast } from "svelte-sonner";
+    import AvatarFallback from "../ui/avatar/avatar-fallback.svelte";
+    import { calculateAge, copyToClipboard, getInitials } from "$lib/utils";
 
     interface Props {
         employees: Employee[];
@@ -54,12 +55,12 @@
                     <Table.Cell class="border border-gray-300">
                         <div class="flex items-center gap-3">
                             <Avatar>
-                                {#if employee.photoPath}
-                                    <AvatarImage
-                                        src={employee.photoPath}
-                                        alt={employee.name}
-                                    />
-                                {/if}
+                                <AvatarImage
+                                    src={employee.photoPath
+                                        ? convertFileSrc(employee.photoPath)
+                                        : ""}
+                                    alt={employee.name}
+                                />
                                 <AvatarFallback
                                     >{getInitials(
                                         employee.name,
