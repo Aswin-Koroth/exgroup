@@ -1,15 +1,15 @@
 <script lang="ts">
+    import {
+        X,
+        Search,
+        MapPin,
+        Funnel,
+        CircleX,
+        Calendar,
+    } from "lucide-svelte";
+    import * as Card from "$lib/components/ui/card";
     import { Input } from "$lib/components/ui/input";
     import * as Select from "$lib/components/ui/select";
-    import * as Card from "$lib/components/ui/card";
-    import {
-        Search,
-        X,
-        Calendar,
-        MapPin,
-        Filter,
-        XCircle,
-    } from "lucide-svelte";
     import { EmployeeStatus, type FilterOptions } from "$lib/types/employee";
 
     interface Props {
@@ -48,7 +48,7 @@
     <Card.Content class="p-3">
         <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-1.5 text-muted-foreground">
-                <Filter class="h-3.5 w-3.5" />
+                <Funnel class="h-3.5 w-3.5" />
                 <span class="text-xs font-medium uppercase tracking-wide"
                     >Filters</span
                 >
@@ -58,14 +58,13 @@
                     onclick={handleReset}
                     class="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
                 >
-                    <XCircle class="h-3 w-3" />
+                    <CircleX class="h-3 w-3" />
                     Clear all
                 </button>
             {/if}
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <!-- Search Input -->
             <div class="relative">
                 <Search
                     class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
@@ -86,7 +85,6 @@
                 {/if}
             </div>
 
-            <!-- Status Select -->
             <Select.Root
                 type="single"
                 name="employmentStatus"
@@ -108,7 +106,6 @@
                 </Select.Content>
             </Select.Root>
 
-            <!-- Location Input -->
             <div class="relative">
                 <MapPin
                     class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
@@ -129,7 +126,6 @@
                 {/if}
             </div>
 
-            <!-- Joining Date Range -->
             <div>
                 <div
                     class="flex items-center h-9 rounded-md border border-input bg-background px-2 focus-within:ring-1 focus-within:ring-ring"
@@ -161,7 +157,6 @@
                 </div>
             </div>
 
-            <!-- Exit Date Range -->
             <div>
                 <div
                     class="flex items-center h-9 rounded-md border border-input bg-background px-2 focus-within:ring-1 focus-within:ring-ring"
@@ -194,7 +189,6 @@
             </div>
         </div>
 
-        <!-- Active Filters Display -->
         {#if hasActiveFilters}
             <div
                 class="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-border/40"
