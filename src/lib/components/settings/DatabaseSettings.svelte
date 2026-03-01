@@ -3,6 +3,7 @@
     import * as Card from "$lib/components/ui/card";
     import { Button } from "$lib/components/ui/button";
     import { Database, Download } from "lucide-svelte";
+    import { open } from "@tauri-apps/plugin-dialog";
 
     interface DbInfo {
         path: string;
@@ -26,9 +27,19 @@
     }
 
     async function createBackup() {
+        const selectedDir = await open({
+            directory: true,
+            multiple: false,
+            title: "Choose Backup Destination",
+        });
+
+        if (!selectedDir) return;
+
         backupStatus = "Creating backup...";
         try {
-            const backupPath = await invoke<string>("create_database_backup");
+            const backupPath = await invoke<string>("create_database_backup", {
+                backupDir: selectedDir,
+            });
             backupStatus = `Backup created: ${backupPath}`;
         } catch (error) {
             backupStatus = `Error: ${error}`;

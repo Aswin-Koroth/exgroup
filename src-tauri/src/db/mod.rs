@@ -2,20 +2,20 @@ use rusqlite::{Connection, Result};
 use std::fs;
 use std::path::PathBuf;
 
+use crate::APP_DATA_DIR;
+
 pub mod backup;
 mod migrations;
 
-const DB_NAME: &str = "employee_management.db";
+const DB_NAME: &str = "exgroup_app.db";
 const CURRENT_VERSION: i32 = 1;
 
 /// Get the database path in the app's data directory
 pub fn get_db_path() -> Result<PathBuf, String> {
-    // Get the app data directory
-    // let app_data_dir = tauri::api::path::app_data_dir(&tauri::Config::default())
-    //     .ok_or_else(|| "Failed to get app data directory".to_string())?;
-    let app_data_dir = PathBuf::from(r#"X:\TESTTT"#);
+    let app_data_dir = APP_DATA_DIR
+        .get()
+        .ok_or_else(|| "Database path is not initialized yet".to_string())?;
 
-    // Create the directory if it doesn't exist
     fs::create_dir_all(&app_data_dir)
         .map_err(|e| format!("Failed to create app data directory: {e}"))?;
 

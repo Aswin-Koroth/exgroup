@@ -1,8 +1,13 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use crate::APP_DATA_DIR;
+
 pub fn get_files_dir() -> Result<PathBuf, String> {
-    let app_data_dir = PathBuf::from(r#"X:\TESTTT"#);
+    let app_data_dir = APP_DATA_DIR
+        .get()
+        .ok_or_else(|| "Database path is not initialized yet".to_string())?;
+
     let file_path = app_data_dir.join("files");
 
     fs::create_dir_all(&file_path).map_err(|e| format!("Failed to create files directory: {e}"))?;

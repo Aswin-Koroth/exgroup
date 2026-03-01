@@ -5,7 +5,7 @@ use crate::db;
 use crate::state::AppState;
 use crate::{db::backup, files::save_profile_image};
 use rusqlite::{params, Result};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tauri::State;
 
 #[tauri::command]
@@ -57,7 +57,6 @@ pub fn get_all_employees(
 
     let offset = (page - 1) * limit;
     query.push_str(&format!(" LIMIT {limit} OFFSET {offset}"));
-    println!("Query: {query}");
     let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
 
     let employees = stmt
@@ -266,14 +265,16 @@ pub fn get_db_info(_state: State<AppState>) -> Result<DbInfo, String> {
 }
 
 #[tauri::command]
-pub fn create_database_backup(_state: State<AppState>) -> Result<String, String> {
+pub fn create_database_backup(
+    _state: State<AppState>,
+    backup_dir: Option<String>,
+) -> Result<String, String> {
     let conn = db::get_connection()?;
-    let db_path = db::get_db_path()?;
 
-    let backup_dir = db_path
-        .parent()
-        .ok_or_else(|| "Failed to get database directory".to_string())?
-        .join("backups");
+    let backup_dir = match backup_dir {
+        Some(path) => PathBuf::from(path),
+        None => Err("No backup directory provided")?,
+    };
 
     let backup_path = backup::create_backup(&conn, &backup_dir)?;
 

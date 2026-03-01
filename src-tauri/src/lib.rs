@@ -3,9 +3,13 @@ mod employees;
 mod files;
 mod state;
 
+use std::{path::PathBuf, sync::OnceLock};
+
 use employees::commands;
 use state::AppState;
 use tauri::Manager;
+
+pub static APP_DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,6 +17,14 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             println!("Initializing database...");
+            let app_data_dir = app
+                .path()
+                .app_data_dir()
+                .expect("Failed to get app data dir");
+
+            APP_DATA_DIR
+                .set(app_data_dir)
+                .expect("Failed to set APP_DATA_DIR");
 
             match db::init_db() {
                 Ok(conn) => {

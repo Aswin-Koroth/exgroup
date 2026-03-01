@@ -1,15 +1,16 @@
+use super::DB_NAME;
 use chrono::Local;
 use rusqlite::Connection;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Create a backup of the database
-pub fn create_backup(conn: &Connection, backup_dir: &PathBuf) -> Result<PathBuf, String> {
+pub fn create_backup(conn: &Connection, backup_dir: &Path) -> Result<PathBuf, String> {
     fs::create_dir_all(backup_dir)
         .map_err(|e| format!("Failed to create backup directory: {e}"))?;
 
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");
-    let backup_filename = format!("employee_management_backup_{timestamp}.db");
+    let backup_filename = format!("{DB_NAME}_backup_{timestamp}.db");
     let backup_path = backup_dir.join(backup_filename);
 
     let mut backup_conn = Connection::open(&backup_path)
@@ -27,7 +28,7 @@ pub fn create_backup(conn: &Connection, backup_dir: &PathBuf) -> Result<PathBuf,
 }
 
 /// Clean old backups (keep only last N backups)
-pub fn clean_old_backups(backup_dir: &PathBuf, keep_count: usize) -> Result<(), String> {
+pub fn clean_old_backups(backup_dir: &Path, keep_count: usize) -> Result<(), String> {
     let mut backups: Vec<PathBuf> = fs::read_dir(backup_dir)
         .map_err(|e| format!("Failed to read backup directory: {e}"))?
         .filter_map(|entry| entry.ok())
