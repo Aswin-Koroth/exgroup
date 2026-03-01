@@ -1,14 +1,9 @@
 <script lang="ts">
-    import {
-        Users,
-        Database,
-        Component,
-        PanelLeftOpenIcon,
-        PanelLeftCloseIcon,
-    } from "lucide-svelte";
+    import { Users, Database, PanelLeftCloseIcon } from "lucide-svelte";
     import { page } from "$app/state";
     import { cn } from "tailwind-variants";
     import { goto } from "$app/navigation";
+    import logo from "$lib/assets/icon.png";
     import { isSidebarOpen } from "$lib/stores/navigation";
 
     interface NavItem {
@@ -37,7 +32,7 @@
 
 <aside
     class={cn(
-        "fixed left-0 top-0 group/sidebar h-screen bg-linear-to-b from-gray-900 to-gray-800 text-white transition-all duration-300 ease-in-out shadow-2xl z-50",
+        "fixed select-none left-0 top-0 group/sidebar h-screen bg-linear-to-b from-gray-900 to-gray-800 text-white transition-all duration-300 ease-in-out shadow-2xl z-50",
         {
             "w-64": $isSidebarOpen,
             "w-16": !$isSidebarOpen,
@@ -58,36 +53,36 @@
 
 {#snippet header()}
     <div
-        class="h-16 flex items-center justify-between px-3 border-b border-gray-700"
+        class="h-16 flex items-center justify-between px-3 border-b border-gray-700 overflow-hidden"
     >
-        {#if $isSidebarOpen}
-            <div class="flex items-center gap-2">
-                <div class=" bg-blue-400 rounded-md flex items-center p-2">
-                    <Component class="size-5 " />
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="font-bold text-lg">ExGroup</span>
-                </div>
+        <div class="flex items-center gap-2 min-w-0">
+            <div
+                class="bg-white p-1 rounded-md flex items-center shrink-0"
+                style={$isSidebarOpen ? "display:flex" : "display:none"}
+            >
+                <img src={logo} alt="ExGroup Logo" class="size-7" />
             </div>
-            <button
-                class="justify-self-end hover:bg-gray-700 hover:text-white p-2 rounded-md"
-                onclick={toggleSidebar}
+            <span
+                class="font-bold text-lg whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out"
+                style={$isSidebarOpen
+                    ? "max-width: 200px; opacity: 1;"
+                    : "max-width: 0px; opacity: 0;"}
+            >
+                ExGroup
+            </span>
+        </div>
+
+        <button
+            class="hover:bg-gray-700 hover:text-white p-2 rounded-md shrink-0 transition-transform duration-300"
+            onclick={toggleSidebar}
+        >
+            <div
+                class="transition-transform duration-300"
+                style={$isSidebarOpen ? "rotate: 0deg" : "rotate: 180deg"}
             >
                 <PanelLeftCloseIcon class="size-5" />
-            </button>
-        {:else}
-            <div class="flex items-center gap-2">
-                <button
-                    class=" bg-blue-400 rounded-md flex items-center p-2"
-                    onclick={toggleSidebar}
-                >
-                    <Component class="size-5 group-hover/sidebar:hidden" />
-                    <PanelLeftOpenIcon
-                        class="size-5 group-hover/sidebar:block hidden"
-                    />
-                </button>
             </div>
-        {/if}
+        </button>
     </div>
 {/snippet}
 
@@ -130,7 +125,7 @@
 {/snippet}
 
 {#snippet version()}
-    <div class="absolute bottom-4 left-0 right-0 px-3">
+    <div class="absolute bottom-4 left-0 right-0 px-3 select-none">
         {#if $isSidebarOpen}
             <p class="text-xs text-gray-500 text-center">v1.0.0</p>
         {:else}

@@ -16,7 +16,7 @@ pub fn get_db_path() -> Result<PathBuf, String> {
         .get()
         .ok_or_else(|| "Database path is not initialized yet".to_string())?;
 
-    fs::create_dir_all(&app_data_dir)
+    fs::create_dir_all(app_data_dir)
         .map_err(|e| format!("Failed to create app data directory: {e}"))?;
 
     Ok(app_data_dir.join(DB_NAME))
