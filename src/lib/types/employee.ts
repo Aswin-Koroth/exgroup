@@ -69,10 +69,12 @@ export interface EmployeeFormData {
 }
 
 export interface FilterOptions {
-  query?: string;
   post?: string;
+  query?: string;
   jobPost?: string;
-  exitDate?: string;
-  joiningDate?: string;
+  exitDateTo?: string;
+  exitDateFrom?: string;
+  joiningDateTo?: string;
+  joiningDateFrom?: string;
   employmentStatus?: string;
 }

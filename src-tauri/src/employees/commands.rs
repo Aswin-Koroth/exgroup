@@ -35,14 +35,24 @@ pub fn get_all_employees(
             query.push_str(&format!(" AND employment_status = '{employment_status}'"));
         }
     }
-    if let Some(joining_date) = &filter.joining_date {
-        if !joining_date.trim().is_empty() {
-            query.push_str(&format!(" AND joining_date = '{joining_date}'"));
+    if let Some(from) = &filter.joining_date_from {
+        if !from.trim().is_empty() {
+            query.push_str(&format!(" AND joining_date >= '{from}'"));
         }
     }
-    if let Some(exit_date) = &filter.exit_date {
-        if !exit_date.trim().is_empty() {
-            query.push_str(&format!(" AND exit_date = '{exit_date}'"));
+    if let Some(to) = &filter.joining_date_to {
+        if !to.trim().is_empty() {
+            query.push_str(&format!(" AND joining_date <= '{to}'"));
+        }
+    }
+    if let Some(from) = &filter.exit_date_from {
+        if !from.trim().is_empty() {
+            query.push_str(&format!(" AND exit_date >= '{from}'"));
+        }
+    }
+    if let Some(to) = &filter.exit_date_to {
+        if !to.trim().is_empty() {
+            query.push_str(&format!(" AND exit_date <= '{to}'"));
         }
     }
     if let Some(post) = &filter.post {

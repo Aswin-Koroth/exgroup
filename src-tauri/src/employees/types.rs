@@ -74,11 +74,13 @@ pub struct DbInfo {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Filter {
-    pub query: Option<String>,
     pub post: Option<String>,
+    pub query: Option<String>,
     pub job_post: Option<String>,
-    pub exit_date: Option<String>,
-    pub joining_date: Option<String>,
+    pub exit_date_to: Option<String>,
+    pub exit_date_from: Option<String>,
+    pub joining_date_to: Option<String>,
+    pub joining_date_from: Option<String>,
     pub employment_status: Option<String>,
 }
 

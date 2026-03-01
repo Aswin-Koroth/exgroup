@@ -36,7 +36,7 @@ pub fn save_profile_image(source_path: &Path, filename: &str) -> Result<PathBuf,
     let destination_path = get_profile_image_dir()?.join(filename);
 
     fs::copy(source_path, &destination_path)
-        .map_err(|_| "Failed to save profile image".to_string())?;
+        .map_err(|e| format!("Failed to save profile image: {e}"))?;
 
     Ok(destination_path)
 }
