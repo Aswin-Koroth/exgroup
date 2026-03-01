@@ -127,7 +127,7 @@
 {#snippet version()}
     <div class="absolute bottom-4 left-0 right-0 px-3 select-none">
         {#if $isSidebarOpen}
-            <p class="text-xs text-gray-500 text-center">v1.0.0</p>
+            <p class="text-xs text-gray-500 text-center">v1.1.0</p>
         {:else}
             <p class="text-xs text-gray-500 text-center">v1</p>
         {/if}
