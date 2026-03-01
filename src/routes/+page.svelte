@@ -6,8 +6,8 @@
         Download,
         SquarePen,
         RefreshCw,
-        ChevronRightIcon,
         ChevronLeftIcon,
+        ChevronRightIcon,
     } from "lucide-svelte";
     import type {
         Employee,
@@ -22,7 +22,7 @@
     import EmployeeTable from "$lib/components/employee/EmployeeTable.svelte";
     import EmployeeFilters from "$lib/components/employee/EmployeeFilters.svelte";
 
-    const ITEMS_PER_PAGE = 2;
+    const ITEMS_PER_PAGE = 10;
 
     let employeeListResponse = $state<EmployeeListResponse>({
         employees: [],
@@ -122,6 +122,7 @@
     function handleFormCancel() {
         showForm = false;
         editingEmployee = null;
+        loadEmployees();
     }
 
     function handleFormSave(_: Employee) {

@@ -6,30 +6,30 @@ use std::path::PathBuf;
 /// Create a backup of the database
 pub fn create_backup(conn: &Connection, backup_dir: &PathBuf) -> Result<PathBuf, String> {
     fs::create_dir_all(backup_dir)
-        .map_err(|e| format!("Failed to create backup directory: {}", e))?;
+        .map_err(|e| format!("Failed to create backup directory: {e}"))?;
 
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");
-    let backup_filename = format!("employee_management_backup_{}.db", timestamp);
+    let backup_filename = format!("employee_management_backup_{timestamp}.db");
     let backup_path = backup_dir.join(backup_filename);
 
     let mut backup_conn = Connection::open(&backup_path)
-        .map_err(|e| format!("Failed to create backup connection: {}", e))?;
+        .map_err(|e| format!("Failed to create backup connection: {e}"))?;
 
     let backup = rusqlite::backup::Backup::new(conn, &mut backup_conn)
-        .map_err(|e| format!("Failed to initialize backup: {}", e))?;
+        .map_err(|e| format!("Failed to initialize backup: {e}"))?;
 
     backup
         .run_to_completion(5, std::time::Duration::from_millis(250), None)
-        .map_err(|e| format!("Failed to complete backup: {}", e))?;
+        .map_err(|e| format!("Failed to complete backup: {e}"))?;
 
-    println!("Backup created: {:?}", backup_path);
+    println!("Backup created: {backup_path:?}");
     Ok(backup_path)
 }
 
 /// Clean old backups (keep only last N backups)
 pub fn clean_old_backups(backup_dir: &PathBuf, keep_count: usize) -> Result<(), String> {
     let mut backups: Vec<PathBuf> = fs::read_dir(backup_dir)
-        .map_err(|e| format!("Failed to read backup directory: {}", e))?
+        .map_err(|e| format!("Failed to read backup directory: {e}"))?
         .filter_map(|entry| entry.ok())
         .map(|entry| entry.path())
         .filter(|path| {
@@ -48,8 +48,8 @@ pub fn clean_old_backups(backup_dir: &PathBuf, keep_count: usize) -> Result<(), 
 
     // Remove old backups
     for old_backup in backups.iter().skip(keep_count) {
-        fs::remove_file(old_backup).map_err(|e| format!("Failed to remove old backup: {}", e))?;
-        println!("Removed old backup: {:?}", old_backup);
+        fs::remove_file(old_backup).map_err(|e| format!("Failed to remove old backup: {e}"))?;
+        println!("Removed old backup: {old_backup:?}");
     }
 
     Ok(())

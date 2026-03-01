@@ -1,97 +1,12 @@
+use super::helpers::{get_employee_by_essid, get_employee_by_id, remove_employee_photo};
+use super::types::Employee;
+use super::types::{DbInfo, EmployeeInput, EmployeeListResponse, Filter};
 use crate::db;
 use crate::state::AppState;
+use crate::{db::backup, files::save_profile_image};
 use rusqlite::{params, Result};
-use serde::{Deserialize, Serialize};
+use std::path::Path;
 use tauri::State;
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Employee {
-    pub id: i64,
-    pub name: String,
-    pub father_name: Option<String>,
-    pub spouse_name: Option<String>,
-    pub current_place: Option<String>,
-    pub current_post: Option<String>,
-    pub current_address: Option<String>,
-    pub phone_numbers: Option<String>,
-    pub permanent_same_as_current: i32,
-    pub permanent_place: Option<String>,
-    pub permanent_post: Option<String>,
-    pub permanent_address: Option<String>,
-    pub emergency_contact_name: Option<String>,
-    pub emergency_contact_relation: Option<String>,
-    pub emergency_contact_phone: Option<String>,
-    pub police_station: Option<String>,
-    pub experience: Option<String>,
-    pub job_post: Option<String>,
-    pub employment_status: String,
-    pub joining_date: Option<String>,
-    pub exit_date: Option<String>,
-    pub essid: Option<String>,
-    pub photo_path: Option<String>,
-    pub date_of_birth: Option<String>,
-    pub uan: Option<String>,
-    pub esiip: Option<String>,
-    pub created_at: Option<String>,
-    pub updated_at: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EmployeeInput {
-    pub name: String,
-    pub father_name: Option<String>,
-    pub spouse_name: Option<String>,
-    pub current_place: Option<String>,
-    pub current_post: Option<String>,
-    pub current_address: Option<String>,
-    pub phone_numbers: Option<String>,
-    pub permanent_same_as_current: i32,
-    pub permanent_place: Option<String>,
-    pub permanent_post: Option<String>,
-    pub permanent_address: Option<String>,
-    pub emergency_contact_name: Option<String>,
-    pub emergency_contact_relation: Option<String>,
-    pub emergency_contact_phone: Option<String>,
-    pub police_station: Option<String>,
-    pub experience: Option<String>,
-    pub job_post: Option<String>,
-    pub employment_status: String,
-    pub joining_date: Option<String>,
-    pub exit_date: Option<String>,
-    pub essid: Option<String>,
-    pub photo_path: Option<String>,
-    pub date_of_birth: Option<String>,
-    pub uan: Option<String>,
-    pub esiip: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DbInfo {
-    pub path: String,
-    pub version: i32,
-    pub employee_count: i64,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Filter {
-    pub query: Option<String>,
-    pub post: Option<String>,
-    pub job_post: Option<String>,
-    pub exit_date: Option<String>,
-    pub joining_date: Option<String>,
-    pub employment_status: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EmployeeListResponse {
-    pub employees: Vec<Employee>,
-    pub total_count: i64,
-}
 
 #[tauri::command]
 pub fn get_all_employees(
@@ -103,37 +18,35 @@ pub fn get_all_employees(
     let conn = db::get_connection()?;
     let mut query = String::from("SELECT * FROM employees WHERE 1=1");
     if let Some(search_query) = &filter.query {
-        println!("Search Query: {}", search_query);
         if !search_query.trim().is_empty() {
             query.push_str(&format!(
-                " AND name LIKE '%{}%' OR essid LIKE '%{}%'",
-                search_query, search_query
+                " AND name LIKE '%{search_query}%' OR essid LIKE '%{search_query}%'"
             ));
         }
     }
     if let Some(job_post) = &filter.job_post {
         if !job_post.trim().is_empty() {
-            query.push_str(&format!(" AND job_post LIKE '%{}%'", job_post));
+            query.push_str(&format!(" AND job_post LIKE '%{job_post}%'"));
         }
     }
     if let Some(employment_status) = &filter.employment_status {
         if !employment_status.trim().is_empty() {
-            query.push_str(&format!(" AND employment_status = '{}'", employment_status));
+            query.push_str(&format!(" AND employment_status = '{employment_status}'"));
         }
     }
     if let Some(joining_date) = &filter.joining_date {
         if !joining_date.trim().is_empty() {
-            query.push_str(&format!(" AND joining_date = '{}'", joining_date));
+            query.push_str(&format!(" AND joining_date = '{joining_date}'"));
         }
     }
     if let Some(exit_date) = &filter.exit_date {
         if !exit_date.trim().is_empty() {
-            query.push_str(&format!(" AND exit_date = '{}'", exit_date));
+            query.push_str(&format!(" AND exit_date = '{exit_date}'"));
         }
     }
     if let Some(post) = &filter.post {
         if !post.trim().is_empty() {
-            query.push_str(&format!(" AND permanent_post LIKE '%{}%'", post));
+            query.push_str(&format!(" AND permanent_post LIKE '%{post}%'"));
         }
     }
 
@@ -143,8 +56,8 @@ pub fn get_all_employees(
     let limit = limit.unwrap_or(10);
 
     let offset = (page - 1) * limit;
-    query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
-    println!("Query: {}", query);
+    query.push_str(&format!(" LIMIT {limit} OFFSET {offset}"));
+    println!("Query: {query}");
     let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
 
     let employees = stmt
@@ -201,6 +114,16 @@ pub fn create_employee(
 ) -> Result<Employee, String> {
     let conn = db::get_connection()?;
 
+    if get_employee_by_essid(&conn, &employee.essid)?.is_some() {
+        return Err("Employee with the same ESSID already exists".to_string());
+    }
+
+    let saved_profile_image_path = employee
+        .photo_path
+        .filter(|p| !p.is_empty())
+        .map(|photo_path| save_profile_image(Path::new(&photo_path), &employee.essid))
+        .transpose()?;
+
     conn.execute(
         "INSERT INTO employees (
             name, father_name, spouse_name, current_place, current_post, current_address,
@@ -231,7 +154,7 @@ pub fn create_employee(
             employee.joining_date,
             employee.exit_date,
             employee.essid,
-            employee.photo_path,
+            saved_profile_image_path.map(|p| p.to_string_lossy().to_string()),
             employee.date_of_birth,
             employee.uan,
             employee.esiip,
@@ -239,7 +162,11 @@ pub fn create_employee(
     ).map_err(|e| e.to_string())?;
 
     let id = conn.last_insert_rowid();
-    get_employee_by_id(&conn, id)
+    if let Ok(Some(employee)) = get_employee_by_id(&conn, id) {
+        Ok(employee)
+    } else {
+        Err("Failed to retrieve employee".to_string())
+    }
 }
 
 #[tauri::command]
@@ -249,6 +176,18 @@ pub fn update_employee(
     employee: EmployeeInput,
 ) -> Result<Employee, String> {
     let conn = db::get_connection()?;
+
+    if let Some(existing_employee) = get_employee_by_essid(&conn, &employee.essid)? {
+        if existing_employee.id != id {
+            return Err("Employee with the same ESSID already exists".to_string());
+        }
+    }
+
+    let saved_profile_image_path = employee
+        .photo_path
+        .filter(|p| !p.is_empty())
+        .map(|photo_path| save_profile_image(Path::new(&photo_path), &employee.essid))
+        .transpose()?;
 
     conn.execute(
         "UPDATE employees SET
@@ -283,7 +222,7 @@ pub fn update_employee(
             employee.joining_date,
             employee.exit_date,
             employee.essid,
-            employee.photo_path,
+            saved_profile_image_path.map(|p| p.to_string_lossy().to_string()),
             employee.date_of_birth,
             employee.uan,
             employee.esiip,
@@ -292,7 +231,11 @@ pub fn update_employee(
     )
     .map_err(|e| e.to_string())?;
 
-    get_employee_by_id(&conn, id)
+    if let Ok(Some(employee)) = get_employee_by_id(&conn, id) {
+        Ok(employee)
+    } else {
+        Err("Failed to retrieve employee".to_string())
+    }
 }
 
 #[tauri::command]
@@ -322,49 +265,6 @@ pub fn get_db_info(_state: State<AppState>) -> Result<DbInfo, String> {
     })
 }
 
-// Helper function
-fn get_employee_by_id(conn: &rusqlite::Connection, id: i64) -> Result<Employee, String> {
-    let mut stmt = conn
-        .prepare("SELECT * FROM employees WHERE id = ?1")
-        .map_err(|e| e.to_string())?;
-
-    stmt.query_row([id], |row| {
-        Ok(Employee {
-            id: row.get(0)?,
-            name: row.get(1)?,
-            father_name: row.get(2)?,
-            spouse_name: row.get(3)?,
-            current_place: row.get(4)?,
-            current_post: row.get(5)?,
-            current_address: row.get(6)?,
-            phone_numbers: row.get(7)?,
-            permanent_same_as_current: row.get(8)?,
-            permanent_place: row.get(9)?,
-            permanent_post: row.get(10)?,
-            permanent_address: row.get(11)?,
-            emergency_contact_name: row.get(12)?,
-            emergency_contact_relation: row.get(13)?,
-            emergency_contact_phone: row.get(14)?,
-            police_station: row.get(15)?,
-            experience: row.get(16)?,
-            job_post: row.get(17)?,
-            employment_status: row.get(18)?,
-            joining_date: row.get(19)?,
-            exit_date: row.get(20)?,
-            essid: row.get(21)?,
-            photo_path: row.get(22)?,
-            date_of_birth: row.get(23)?,
-            uan: row.get(24)?,
-            esiip: row.get(25)?,
-            created_at: row.get(26)?,
-            updated_at: row.get(27)?,
-        })
-    })
-    .map_err(|e| e.to_string())
-}
-
-use crate::db::backup;
-
 #[tauri::command]
 pub fn create_database_backup(_state: State<AppState>) -> Result<String, String> {
     let conn = db::get_connection()?;
@@ -377,8 +277,15 @@ pub fn create_database_backup(_state: State<AppState>) -> Result<String, String>
 
     let backup_path = backup::create_backup(&conn, &backup_dir)?;
 
-    // Clean old backups (keep last 10)
     backup::clean_old_backups(&backup_dir, 10)?;
 
     Ok(backup_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub fn delete_employee_image(_state: State<AppState>, id: i64) -> Result<(), String> {
+    let conn = db::get_connection()?;
+
+    remove_employee_photo(&conn, id)?;
+    Ok(())
 }

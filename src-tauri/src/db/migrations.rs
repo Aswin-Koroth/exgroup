@@ -29,7 +29,7 @@ pub fn run_initial_migration(conn: &Connection) -> Result<(), String> {
             employment_status TEXT DEFAULT 'applied',
             joining_date TEXT,
             exit_date TEXT,
-            essid TEXT,
+            essid NOT NULL UNIQUE,
             photo_path TEXT,
             date_of_birth TEXT,
             uan TEXT,
@@ -39,35 +39,35 @@ pub fn run_initial_migration(conn: &Connection) -> Result<(), String> {
         )",
         [],
     )
-    .map_err(|e| format!("Failed to create employees table: {}", e))?;
+    .map_err(|e| format!("Failed to create employees table: {e}"))?;
 
     // Create indexes
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_employment_status ON employees(employment_status)",
         [],
     )
-    .map_err(|e| format!("Failed to create employment_status index: {}", e))?;
+    .map_err(|e| format!("Failed to create employment_status index: {e}"))?;
 
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_current_place ON employees(current_place)",
         [],
     )
-    .map_err(|e| format!("Failed to create current_place index: {}", e))?;
+    .map_err(|e| format!("Failed to create current_place index: {e}"))?;
 
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_current_post ON employees(current_post)",
         [],
     )
-    .map_err(|e| format!("Failed to create current_post index: {}", e))?;
+    .map_err(|e| format!("Failed to create current_post index: {e}"))?;
 
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_job_post ON employees(job_post)",
         [],
     )
-    .map_err(|e| format!("Failed to create job_post index: {}", e))?;
+    .map_err(|e| format!("Failed to create job_post index: {e}"))?;
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_name ON employees(name)", [])
-        .map_err(|e| format!("Failed to create name index: {}", e))?;
+        .map_err(|e| format!("Failed to create name index: {e}"))?;
 
     // Create trigger for updated_at
     conn.execute(
@@ -78,7 +78,7 @@ pub fn run_initial_migration(conn: &Connection) -> Result<(), String> {
          END",
         [],
     )
-    .map_err(|e| format!("Failed to create trigger: {}", e))?;
+    .map_err(|e| format!("Failed to create trigger: {e}"))?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS db_version (
@@ -87,7 +87,7 @@ pub fn run_initial_migration(conn: &Connection) -> Result<(), String> {
         )",
         [],
     )
-    .map_err(|e| format!("Failed to create table: {}", e))?;
+    .map_err(|e| format!("Failed to create table: {e}"))?;
 
     // Set initial version
     set_db_version(conn, 1)?;
@@ -100,8 +100,8 @@ pub fn run_initial_migration(conn: &Connection) -> Result<(), String> {
 pub fn run_migrations(conn: &Connection) -> Result<(), String> {
     let current_version = get_db_version(conn)?;
 
-    println!("Current database version: {}", current_version);
-    println!("Target database version: {}", CURRENT_VERSION);
+    println!("Current database version: {current_version}");
+    println!("Target database version: {CURRENT_VERSION}");
 
     if current_version >= CURRENT_VERSION {
         println!("Database is up to date");
@@ -110,16 +110,16 @@ pub fn run_migrations(conn: &Connection) -> Result<(), String> {
 
     // Run migrations in order
     for version in (current_version + 1)..=CURRENT_VERSION {
-        println!("Running migration to version {}", version);
+        println!("Running migration to version {version}");
 
         match version {
             1 => migration_v1(conn)?,
             // 2 => migration_v2(conn)?,
-            _ => return Err(format!("Unknown migration version: {}", version)),
+            _ => return Err(format!("Unknown migration version: {version}")),
         }
 
         set_db_version(conn, version)?;
-        println!("Migration to version {} completed", version);
+        println!("Migration to version {version} completed");
     }
 
     println!("All migrations completed successfully");

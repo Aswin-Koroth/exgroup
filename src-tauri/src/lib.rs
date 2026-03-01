@@ -1,7 +1,9 @@
-mod commands;
 mod db;
+mod employees;
+mod files;
 mod state;
 
+use employees::commands;
 use state::AppState;
 use tauri::Manager;
 
@@ -23,7 +25,7 @@ pub fn run() {
                     Ok(())
                 }
                 Err(e) => {
-                    eprintln!("Failed to initialize database: {}", e);
+                    eprintln!("Failed to initialize database: {e}");
                     Err(e.into())
                 }
             }
@@ -34,7 +36,8 @@ pub fn run() {
             commands::update_employee,
             commands::delete_employee,
             commands::get_db_info,
-            commands::create_database_backup
+            commands::create_database_backup,
+            commands::delete_employee_image
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

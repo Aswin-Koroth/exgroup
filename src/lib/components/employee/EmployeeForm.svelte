@@ -16,6 +16,11 @@
         AvatarImage,
         AvatarFallback,
     } from "$lib/components/ui/avatar";
+    import {
+        EmployeeStatus,
+        type Employee,
+        type EmployeeFormData,
+    } from "$lib/types/employee";
     import { invoke } from "@tauri-apps/api/core";
     import * as Card from "$lib/components/ui/card";
     import { open } from "@tauri-apps/plugin-dialog";
@@ -23,13 +28,9 @@
     import { Label } from "$lib/components/ui/label";
     import { Button } from "$lib/components/ui/button";
     import * as Select from "$lib/components/ui/select";
+    import { convertFileSrc } from "@tauri-apps/api/core";
     import { Textarea } from "$lib/components/ui/textarea";
     import { Checkbox } from "$lib/components/ui/checkbox";
-    import {
-        EmployeeStatus,
-        type Employee,
-        type EmployeeFormData,
-    } from "$lib/types/employee";
 
     interface Props {
         onCancel: () => void;
@@ -39,7 +40,6 @@
 
     let { onCancel, onSave, initialData = null }: Props = $props();
 
-    // Form state
     let formData = $state<EmployeeFormData>({
         name: initialData?.name || "",
         fatherName: initialData?.fatherName || "",
@@ -73,26 +73,30 @@
 
     let errors = $state<Record<string, string>>({});
     let saving = $state(false);
-    let photoPreview = $derived(initialData?.photoPath || "");
-
+    let isEditing = $state(initialData !== null);
+    let photoPreview = $state(
+        initialData?.photoPath ? convertFileSrc(initialData.photoPath) : "",
+    );
     const employmentStatusOptions = [
         { value: EmployeeStatus.APPLIED, label: "Applied" },
         { value: EmployeeStatus.CURRENT, label: "Current" },
         { value: EmployeeStatus.PAST, label: "Past" },
     ];
-
+    $effect(() => {
+        if (initialData?.photoPath) {
+            photoPreview = convertFileSrc(initialData.photoPath);
+        }
+    });
     function addPhoneNumber() {
         formData.phoneNumbers = [...formData.phoneNumbers, ""];
     }
 
-    // Remove phone number field
     function removePhoneNumber(index: number) {
         formData.phoneNumbers = formData.phoneNumbers.filter(
             (_, i) => i !== index,
         );
     }
 
-    // Handle photo upload
     async function handlePhotoUpload() {
         try {
             const selected = await open({
@@ -107,28 +111,33 @@
 
             if (selected) {
                 formData.photoPath = selected as string;
-                photoPreview = selected as string;
+                photoPreview = convertFileSrc(selected as string);
             }
         } catch (error) {
             console.error("Error selecting photo:", error);
         }
     }
 
-    // Copy current address to permanent
+    async function handleRemovePhoto() {
+        if (initialData?.id && formData.photoPath) {
+            await invoke("delete_employee_image", { id: initialData.id });
+        }
+        formData.photoPath = undefined;
+        photoPreview = "";
+    }
+
     function copyCurrentToPermanent() {
         formData.permanentPlace = formData.currentPlace;
         formData.permanentPost = formData.currentPost;
         formData.permanentAddress = formData.currentAddress;
     }
 
-    // Watch for permanent address checkbox
     $effect(() => {
         if (formData.permanentSameAsCurrent) {
             copyCurrentToPermanent();
         }
     });
 
-    // Validation
     function validate(): boolean {
         errors = {};
 
@@ -154,6 +163,10 @@
             if (invalidPhones.length > 0) {
                 errors.phoneNumbers = "Phone numbers must be 10 digits";
             }
+        }
+
+        if (formData.essid!.trim() === "") {
+            errors.essid = "ESSID is required ";
         }
 
         // Validate UAN if provided (12 digits)
@@ -184,7 +197,6 @@
         return Object.keys(errors).length === 0;
     }
 
-    // Handle form submission
     async function handleSubmit() {
         if (!validate()) {
             return;
@@ -193,7 +205,6 @@
         saving = true;
 
         try {
-            // Filter out empty phone numbers
             const validPhones = formData.phoneNumbers.filter(
                 (p) => p.trim() !== "",
             );
@@ -206,13 +217,11 @@
 
             let result;
             if (initialData?.id) {
-                // Update existing employee
                 result = await invoke<Employee>("update_employee", {
                     id: initialData.id,
                     employee: employeeData,
                 });
             } else {
-                // Create new employee
                 result = await invoke<Employee>("create_employee", {
                     employee: employeeData,
                 });
@@ -243,7 +252,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <Card.Title class="text-2xl">
-                        {initialData ? "Edit Employee" : "Add New Employee"}
+                        {isEditing ? "Edit Employee" : "Add New Employee"}
                     </Card.Title>
                     <Card.Description>
                         {initialData
@@ -265,37 +274,7 @@
                 }}
                 class="space-y-8"
             >
-                <!-- Photo Upload -->
-                <div class="flex items-center gap-6">
-                    <Avatar class="h-24 w-24">
-                        {#if photoPreview}
-                            <AvatarImage
-                                src={photoPreview}
-                                alt="Employee photo"
-                            />
-                        {/if}
-                        <AvatarFallback class="text-2xl">
-                            {#if formData.name}
-                                {getInitials(formData.name)}
-                            {:else}
-                                <User class="h-8 w-8" />
-                            {/if}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onclick={handlePhotoUpload}
-                        >
-                            <Upload class="h-4 w-4 mr-2" />
-                            Upload Photo
-                        </Button>
-                        <p class="text-sm text-gray-500 mt-2">
-                            Recommended: Square image, max 2MB
-                        </p>
-                    </div>
-                </div>
+                {@render ProfileImage()}
 
                 <!-- Personal Information -->
                 <div class="space-y-4">
@@ -318,11 +297,7 @@
                                 placeholder="Enter full name"
                                 class={errors.name ? "border-red-500" : ""}
                             />
-                            {#if errors.name}
-                                <p class="text-sm text-red-500">
-                                    {errors.name}
-                                </p>
-                            {/if}
+                            {@render ErrorMessage(errors.name)}
                         </div>
 
                         <div class="space-y-2">
@@ -339,11 +314,7 @@
                                     ? "border-red-500"
                                     : ""}
                             />
-                            {#if errors.dateOfBirth}
-                                <p class="text-sm text-red-500">
-                                    {errors.dateOfBirth}
-                                </p>
-                            {/if}
+                            {@render ErrorMessage(errors.dateOfBirth)}
                         </div>
 
                         <div class="space-y-2">
@@ -409,11 +380,7 @@
                             <Plus class="h-4 w-4 mr-2" />
                             Add Phone Number
                         </Button>
-                        {#if errors.phoneNumbers}
-                            <p class="text-sm text-red-500">
-                                {errors.phoneNumbers}
-                            </p>
-                        {/if}
+                        {@render ErrorMessage(errors.phoneNumbers)}
                     </div>
                 </div>
 
@@ -588,30 +555,6 @@
                                     {/each}
                                 </Select.Content>
                             </Select.Root>
-                            <!-- <Select.Root
-                                selected={employmentStatusOptions.find(
-                                    (o) =>
-                                        o.value === formData.employmentStatus,
-                                )}
-                                onSelectedChange={(v) => {
-                                    if (v)
-                                        formData.employmentStatus = v.value as
-                                            | "applied"
-                                            | "current"
-                                            | "past";
-                                }}
-                            >
-                                <Select.Trigger>
-                                    <Select.Value placeholder="Select status" />
-                                </Select.Trigger>
-                                <Select.Content>
-                                    {#each employmentStatusOptions as option}
-                                        <Select.Item value={option.value}
-                                            >{option.label}</Select.Item
-                                        >
-                                    {/each}
-                                </Select.Content>
-                            </Select.Root> -->
                         </div>
 
                         <div class="space-y-2">
@@ -620,7 +563,7 @@
                             <Input
                                 id="jobPost"
                                 bind:value={formData.jobPost}
-                                placeholder="e.g., Manager, Developer, Technician"
+                                placeholder="e.g., Manager, Security Guard"
                             />
                         </div>
 
@@ -639,11 +582,7 @@
                                     ? "border-red-500"
                                     : ""}
                             />
-                            {#if errors.joiningDate}
-                                <p class="text-sm text-red-500">
-                                    {errors.joiningDate}
-                                </p>
-                            {/if}
+                            {@render ErrorMessage(errors.joiningDate)}
                         </div>
 
                         <div class="space-y-2">
@@ -660,11 +599,7 @@
                                 disabled={formData.employmentStatus !== "past"}
                                 class={errors.exitDate ? "border-red-500" : ""}
                             />
-                            {#if errors.exitDate}
-                                <p class="text-sm text-red-500">
-                                    {errors.exitDate}
-                                </p>
-                            {/if}
+                            {@render ErrorMessage(errors.exitDate)}
                         </div>
 
                         <div class="space-y-2 md:col-span-2">
@@ -688,12 +623,18 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-2">
-                            <Label for="essid">Employee/ESSID Number</Label>
+                            <Label for="essid"
+                                >Employee/ESSID Number <span
+                                    class="text-red-500">*</span
+                                ></Label
+                            >
+
                             <Input
                                 id="essid"
                                 bind:value={formData.essid}
                                 placeholder="Employee identification number"
                             />
+                            {@render ErrorMessage(errors.essid)}
                         </div>
 
                         <div class="space-y-2">
@@ -714,9 +655,7 @@
                                 maxlength={12}
                                 class={errors.uan ? "border-red-500" : ""}
                             />
-                            {#if errors.uan}
-                                <p class="text-sm text-red-500">{errors.uan}</p>
-                            {/if}
+                            {@render ErrorMessage(errors.uan)}
                         </div>
 
                         <div class="space-y-2">
@@ -728,11 +667,7 @@
                                 maxlength={10}
                                 class={errors.esiip ? "border-red-500" : ""}
                             />
-                            {#if errors.esiip}
-                                <p class="text-sm text-red-500">
-                                    {errors.esiip}
-                                </p>
-                            {/if}
+                            {@render ErrorMessage(errors.esiip)}
                         </div>
                     </div>
                 </div>
@@ -745,28 +680,80 @@
                 {/if}
 
                 <!-- Action Buttons -->
-                <div class="flex justify-end gap-3 pt-6 border-t">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onclick={onCancel}
-                        disabled={saving}
-                    >
-                        Cancel
-                    </Button>
-                    <Button type="submit" disabled={saving}>
-                        {#if saving}
-                            <div
-                                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
-                            ></div>
-                            Saving...
-                        {:else}
-                            <Save class="h-4 w-4 mr-2" />
-                            {initialData ? "Update Employee" : "Save Employee"}
-                        {/if}
-                    </Button>
-                </div>
+                {@render ActionButtons()}
             </form>
         </Card.Content>
     </Card.Root>
 </div>
+
+{#snippet ProfileImage()}
+    <div class="flex items-center gap-6">
+        <Avatar class="h-24 w-24">
+            <AvatarImage src={photoPreview || ""} alt="Employee photo" />
+            <AvatarFallback class="text-2xl">
+                {#if formData.name}
+                    {getInitials(formData.name)}
+                {:else}
+                    <User class="h-8 w-8" />
+                {/if}
+            </AvatarFallback>
+        </Avatar>
+        <div class="flex flex-col gap-2">
+            <div class="flex gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onclick={handlePhotoUpload}
+                >
+                    <Upload class="h-4 w-4 mr-2" />
+                    Upload Photo
+                </Button>
+                {#if photoPreview}
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        onclick={handleRemovePhoto}
+                    >
+                        <Trash2 class="h-4 w-4 mr-2" />
+                        Remove Photo
+                    </Button>
+                {/if}
+            </div>
+            <p class="text-sm text-gray-500">
+                Recommended: Square image, max 2MB
+            </p>
+        </div>
+    </div>
+{/snippet}
+
+{#snippet ActionButtons()}
+    <div class="flex justify-end gap-3 pt-6 border-t">
+        <Button
+            type="button"
+            variant="outline"
+            onclick={onCancel}
+            disabled={saving}
+        >
+            Cancel
+        </Button>
+        <Button type="submit" disabled={saving}>
+            {#if saving}
+                <div
+                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                ></div>
+                Saving...
+            {:else}
+                <Save class="h-4 w-4 mr-2" />
+                {initialData ? "Update Employee" : "Save Employee"}
+            {/if}
+        </Button>
+    </div>
+{/snippet}
+
+{#snippet ErrorMessage(message: string)}
+    {#if message}
+        <p class="text-sm text-red-500">
+            {message}
+        </p>
+    {/if}
+{/snippet}
