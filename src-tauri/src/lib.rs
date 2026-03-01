@@ -49,7 +49,8 @@ pub fn run() {
             commands::delete_employee,
             commands::get_db_info,
             commands::create_database_backup,
-            commands::delete_employee_image
+            commands::delete_employee_image,
+            commands::export_employees_csv
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

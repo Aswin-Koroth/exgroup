@@ -21,6 +21,7 @@
     import EmployeeForm from "$lib/components/employee/EmployeeForm.svelte";
     import EmployeeTable from "$lib/components/employee/EmployeeTable.svelte";
     import EmployeeFilters from "$lib/components/employee/EmployeeFilters.svelte";
+    import { save } from "@tauri-apps/plugin-dialog";
 
     const ITEMS_PER_PAGE = 10;
 
@@ -131,8 +132,21 @@
         loadEmployees();
     }
 
-    function handleExport() {
-        console.log("Export data");
+    async function handleExport() {
+        const filePath = await save({
+            title: "Export Employees",
+            defaultPath: "employees.csv",
+            filters: [{ name: "CSV", extensions: ["csv"] }],
+        });
+
+        if (!filePath) return;
+
+        try {
+            await invoke("export_employees_csv", { exportPath: filePath });
+            alert(`Exported successfully to:\n${filePath}`);
+        } catch (error) {
+            alert(`Export failed: ${error}`);
+        }
     }
 </script>
 

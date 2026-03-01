@@ -2,6 +2,7 @@ use super::helpers::{get_employee_by_essid, get_employee_by_id, remove_employee_
 use super::types::Employee;
 use super::types::{DbInfo, EmployeeInput, EmployeeListResponse, Filter};
 use crate::db;
+use crate::db::backup::export_to_csv;
 use crate::state::AppState;
 use crate::{db::backup, files::save_profile_image};
 use rusqlite::{params, Result};
@@ -289,4 +290,14 @@ pub fn delete_employee_image(_state: State<AppState>, id: i64) -> Result<(), Str
 
     remove_employee_photo(&conn, id)?;
     Ok(())
+}
+
+#[tauri::command]
+pub fn export_employees_csv(
+    _state: State<AppState>,
+    export_path: String,
+) -> Result<String, String> {
+    let conn = db::get_connection()?;
+    let path = PathBuf::from(&export_path);
+    export_to_csv(&conn, &path)
 }

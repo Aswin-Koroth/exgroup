@@ -53,6 +53,7 @@
             {/each}
         </ul>
     </nav>
+    {@render version()}
 </aside>
 
 {#snippet header()}
@@ -126,4 +127,14 @@
             {/if}
         </button>
     </li>
+{/snippet}
+
+{#snippet version()}
+    <div class="absolute bottom-4 left-0 right-0 px-3">
+        {#if $isSidebarOpen}
+            <p class="text-xs text-gray-500 text-center">v1.0.0</p>
+        {:else}
+            <p class="text-xs text-gray-500 text-center">v1</p>
+        {/if}
+    </div>
 {/snippet}
