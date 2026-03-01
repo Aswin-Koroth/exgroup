@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 use crate::APP_DATA_DIR;
 
@@ -22,16 +23,19 @@ pub fn get_profile_image_dir() -> Result<PathBuf, String> {
     Ok(files_directory)
 }
 
-pub fn save_profile_image(source_path: &Path, filename: &str) -> Result<PathBuf, String> {
+pub fn save_profile_image(source_path: &Path, old_path: Option<&str>) -> Result<PathBuf, String> {
     if !source_path.exists() {
         return Err(format!("Photo file not found: {}", source_path.display()));
+    }
+    if let Some(old_path) = old_path {
+        delete_image(Path::new(old_path))?
     }
     let extension = source_path
         .extension()
         .and_then(|e| e.to_str())
         .unwrap_or("jpg");
 
-    let filename = format!("{filename}.{extension}");
+    let filename = format!("{}.{extension}", Uuid::new_v4());
 
     let destination_path = get_profile_image_dir()?.join(filename);
 

@@ -1,9 +1,15 @@
 <script lang="ts">
     import { Input } from "$lib/components/ui/input";
-    import { Button } from "$lib/components/ui/button";
     import * as Select from "$lib/components/ui/select";
     import * as Card from "$lib/components/ui/card";
-    import { Search, X, Calendar, MapPinHouseIcon } from "lucide-svelte";
+    import {
+        Search,
+        X,
+        Calendar,
+        MapPin,
+        Filter,
+        XCircle,
+    } from "lucide-svelte";
     import { EmployeeStatus, type FilterOptions } from "$lib/types/employee";
 
     interface Props {
@@ -16,131 +22,267 @@
         filters = {};
     }
 
+    function clearFilter(key: keyof FilterOptions) {
+        filters[key] = undefined;
+    }
+
     const employmentStatusOptions = [
-        { value: "", label: "Status: All" },
+        { value: "", label: "All Statuses" },
         { value: EmployeeStatus.APPLIED, label: "Applied" },
         { value: EmployeeStatus.CURRENT, label: "Current" },
         { value: EmployeeStatus.PAST, label: "Past" },
     ];
+
+    const hasActiveFilters = $derived(
+        filters.query ||
+            filters.employmentStatus ||
+            filters.post ||
+            filters.joiningDateFrom ||
+            filters.joiningDateTo ||
+            filters.exitDateFrom ||
+            filters.exitDateTo,
+    );
 </script>
 
-<Card.Root class="shadow-sm border-muted">
-    <Card.Content class="p-2">
-        <div class="flex flex-wrap gap-2 items-center">
-            <div class="relative flex-[1_1_200px] min-w-50">
+<Card.Root class="border-0 shadow-none bg-muted/30 rounded-lg">
+    <Card.Content class="p-3">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-1.5 text-muted-foreground">
+                <Filter class="h-3.5 w-3.5" />
+                <span class="text-xs font-medium uppercase tracking-wide"
+                    >Filters</span
+                >
+            </div>
+            {#if hasActiveFilters}
+                <button
+                    onclick={handleReset}
+                    class="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
+                >
+                    <XCircle class="h-3 w-3" />
+                    Clear all
+                </button>
+            {/if}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Search Input -->
+            <div class="relative">
                 <Search
                     class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
                 />
                 <Input
                     type="text"
                     bind:value={filters.query}
-                    placeholder="Search name or ESSID..."
-                    class="h-8 pl-8 text-sm bg-background"
+                    placeholder="Search by name or ESSID..."
+                    class="h-9 pl-8 pr-8 text-sm bg-background"
                 />
+                {#if filters.query}
+                    <button
+                        onclick={() => clearFilter("query")}
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                        <X class="h-3.5 w-3.5" />
+                    </button>
+                {/if}
             </div>
 
-            <div class="w-32.2 shrink-0">
-                <Select.Root
-                    type="single"
-                    name="employmentStatus"
-                    bind:value={filters.employmentStatus}
-                >
-                    <Select.Trigger class="h-8 w-full text-sm">
-                        <span class="truncate">
-                            {employmentStatusOptions.find(
-                                (o) => o.value === filters.employmentStatus,
-                            )?.label || "Status"}
-                        </span>
-                    </Select.Trigger>
-                    <Select.Content>
-                        {#each employmentStatusOptions as option}
-                            <Select.Item value={option.value} class="text-sm">
-                                {option.label}
-                            </Select.Item>
-                        {/each}
-                    </Select.Content>
-                </Select.Root>
-            </div>
+            <!-- Status Select -->
+            <Select.Root
+                type="single"
+                name="employmentStatus"
+                bind:value={filters.employmentStatus}
+            >
+                <Select.Trigger class="h-9 w-full text-sm bg-background">
+                    <span class="truncate">
+                        {employmentStatusOptions.find(
+                            (o) => o.value === filters.employmentStatus,
+                        )?.label || "All Statuses"}
+                    </span>
+                </Select.Trigger>
+                <Select.Content>
+                    {#each employmentStatusOptions as option}
+                        <Select.Item value={option.value} class="text-sm">
+                            {option.label}
+                        </Select.Item>
+                    {/each}
+                </Select.Content>
+            </Select.Root>
 
-            <div class="relative w-32.2 shrink-0">
-                <MapPinHouseIcon
+            <!-- Location Input -->
+            <div class="relative">
+                <MapPin
                     class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
                 />
                 <Input
                     type="text"
                     bind:value={filters.post}
-                    placeholder="Location"
-                    class="h-8 pl-8 text-sm"
+                    placeholder="Filter by location..."
+                    class="h-9 pl-8 pr-8 text-sm bg-background"
                 />
+                {#if filters.post}
+                    <button
+                        onclick={() => clearFilter("post")}
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                        <X class="h-3.5 w-3.5" />
+                    </button>
+                {/if}
             </div>
 
-            <div
-                class="flex items-center h-8 flex-[1_1_250px] min-w-62.5 rounded-md border border-input bg-background px-2.5 shadow-sm focus-within:ring-1 focus-within:ring-ring overflow-hidden"
-            >
-                <Calendar
-                    class="mr-1.5 h-3.5 w-3.5 text-muted-foreground shrink-0"
-                />
-                <span
-                    class="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider mr-2 shrink-0"
-                    >Joined</span
+            <!-- Joining Date Range -->
+            <div>
+                <div
+                    class="flex items-center h-9 rounded-md border border-input bg-background px-2 focus-within:ring-1 focus-within:ring-ring"
                 >
-                <input
-                    type="text"
-                    onfocus={(e) => (e.currentTarget.type = "date")}
-                    onblur={(e) => (e.currentTarget.type = "text")}
-                    bind:value={filters.joiningDateFrom}
-                    placeholder="From"
-                    class="w-full min-w-15 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 border border-gray-300 rounded-sm"
-                />
-                <span class="text-muted-foreground/40 mx-1">-</span>
-                <input
-                    type="text"
-                    onfocus={(e) => (e.currentTarget.type = "date")}
-                    onblur={(e) => (e.currentTarget.type = "text")}
-                    bind:value={filters.joiningDateTo}
-                    placeholder="To"
-                    class="w-full min-w-15 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 border border-gray-300 rounded-sm"
-                />
+                    <Calendar
+                        class="mr-1.5 h-3.5 w-3.5 text-muted-foreground shrink-0"
+                    />
+                    <span
+                        class="text-[11px] font-medium text-muted-foreground mr-2 shrink-0"
+                        >Joined</span
+                    >
+                    <input
+                        type="text"
+                        onfocus={(e) => (e.currentTarget.type = "date")}
+                        onblur={(e) => (e.currentTarget.type = "text")}
+                        bind:value={filters.joiningDateFrom}
+                        placeholder="From"
+                        class="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+                    />
+                    <span class="text-muted-foreground/30 mx-1">—</span>
+                    <input
+                        type="text"
+                        onfocus={(e) => (e.currentTarget.type = "date")}
+                        onblur={(e) => (e.currentTarget.type = "text")}
+                        bind:value={filters.joiningDateTo}
+                        placeholder="To"
+                        class="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+                    />
+                </div>
             </div>
 
-            <div
-                class="flex items-center h-8 flex-[1_1_250px] min-w-62.5 rounded-md border border-input bg-background px-2.5 shadow-sm focus-within:ring-1 focus-within:ring-ring overflow-hidden"
-            >
-                <Calendar
-                    class="mr-1.5 h-3.5 w-3.5 text-muted-foreground shrink-0"
-                />
-                <span
-                    class="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider mr-2 shrink-0"
-                    >Exited</span
+            <!-- Exit Date Range -->
+            <div>
+                <div
+                    class="flex items-center h-9 rounded-md border border-input bg-background px-2 focus-within:ring-1 focus-within:ring-ring"
                 >
-                <input
-                    type="text"
-                    onfocus={(e) => (e.currentTarget.type = "date")}
-                    onblur={(e) => (e.currentTarget.type = "text")}
-                    bind:value={filters.exitDateFrom}
-                    placeholder="From"
-                    class="w-full min-w-15 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 border border-gray-300 rounded-sm"
-                />
-                <span class="text-muted-foreground/40 mx-1">-</span>
-                <input
-                    type="text"
-                    onfocus={(e) => (e.currentTarget.type = "date")}
-                    onblur={(e) => (e.currentTarget.type = "text")}
-                    bind:value={filters.exitDateTo}
-                    placeholder="To"
-                    class="w-full min-w-15 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 border border-gray-300 rounded-sm"
-                />
+                    <Calendar
+                        class="mr-1.5 h-3.5 w-3.5 text-muted-foreground shrink-0"
+                    />
+                    <span
+                        class="text-[11px] font-medium text-muted-foreground mr-2 shrink-0"
+                        >Exited</span
+                    >
+                    <input
+                        type="text"
+                        onfocus={(e) => (e.currentTarget.type = "date")}
+                        onblur={(e) => (e.currentTarget.type = "text")}
+                        bind:value={filters.exitDateFrom}
+                        placeholder="From"
+                        class="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+                    />
+                    <span class="text-muted-foreground/30 mx-1">—</span>
+                    <input
+                        type="text"
+                        onfocus={(e) => (e.currentTarget.type = "date")}
+                        onblur={(e) => (e.currentTarget.type = "text")}
+                        bind:value={filters.exitDateTo}
+                        placeholder="To"
+                        class="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+                    />
+                </div>
             </div>
-
-            <Button
-                variant="ghost"
-                size="icon"
-                onclick={handleReset}
-                class="h-8 w-8 ml-auto text-muted-foreground hover:bg-destructive/10 hover:text-destructive shrink-0"
-                title="Clear Filters"
-            >
-                <X class="h-4 w-4" />
-            </Button>
         </div>
+
+        <!-- Active Filters Display -->
+        {#if hasActiveFilters}
+            <div
+                class="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-border/40"
+            >
+                <span class="text-xs text-muted-foreground mr-1"
+                    >Active filters:</span
+                >
+
+                {#if filters.query}
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary/50 rounded-md text-xs"
+                    >
+                        Search: "{filters.query}"
+                        <button
+                            onclick={() => clearFilter("query")}
+                            class="hover:text-destructive"
+                        >
+                            <X class="h-3 w-3" />
+                        </button>
+                    </span>
+                {/if}
+
+                {#if filters.employmentStatus}
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary/50 rounded-md text-xs"
+                    >
+                        Status: {employmentStatusOptions.find(
+                            (o) => o.value === filters.employmentStatus,
+                        )?.label}
+                        <button
+                            onclick={() => clearFilter("employmentStatus")}
+                            class="hover:text-destructive"
+                        >
+                            <X class="h-3 w-3" />
+                        </button>
+                    </span>
+                {/if}
+
+                {#if filters.post}
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary/50 rounded-md text-xs"
+                    >
+                        Location: {filters.post}
+                        <button
+                            onclick={() => clearFilter("post")}
+                            class="hover:text-destructive"
+                        >
+                            <X class="h-3 w-3" />
+                        </button>
+                    </span>
+                {/if}
+
+                {#if filters.joiningDateFrom || filters.joiningDateTo}
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary/50 rounded-md text-xs"
+                    >
+                        Joined: {filters.joiningDateFrom || "Any"} — {filters.joiningDateTo ||
+                            "Any"}
+                        <button
+                            onclick={() => {
+                                clearFilter("joiningDateFrom");
+                                clearFilter("joiningDateTo");
+                            }}
+                            class="hover:text-destructive"
+                        >
+                            <X class="h-3 w-3" />
+                        </button>
+                    </span>
+                {/if}
+
+                {#if filters.exitDateFrom || filters.exitDateTo}
+                    <span
+                        class="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary/50 rounded-md text-xs"
+                    >
+                        Exited: {filters.exitDateFrom || "Any"} — {filters.exitDateTo ||
+                            "Any"}
+                        <button
+                            onclick={() => {
+                                clearFilter("exitDateFrom");
+                                clearFilter("exitDateTo");
+                            }}
+                            class="hover:text-destructive"
+                        >
+                            <X class="h-3 w-3" />
+                        </button>
+                    </span>
+                {/if}
+            </div>
+        {/if}
     </Card.Content>
 </Card.Root>

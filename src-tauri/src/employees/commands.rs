@@ -131,7 +131,7 @@ pub fn create_employee(
     let saved_profile_image_path = employee
         .photo_path
         .filter(|p| !p.is_empty())
-        .map(|photo_path| save_profile_image(Path::new(&photo_path), &employee.essid))
+        .map(|photo_path| save_profile_image(Path::new(&photo_path), None))
         .transpose()?;
 
     conn.execute(
@@ -193,12 +193,20 @@ pub fn update_employee(
         }
     }
 
-    let saved_profile_image_path = employee
-        .photo_path
-        .filter(|p| !p.is_empty())
-        .map(|photo_path| save_profile_image(Path::new(&photo_path), &employee.essid))
-        .transpose()?;
+    let existing_photo = get_employee_by_id(&conn, id)
+        .map_err(|e| e.to_string())?
+        .and_then(|e| e.photo_path);
 
+    let saved_profile_image_path: Option<String> =
+        match employee.photo_path.filter(|p| !p.is_empty()) {
+            Some(photo_path) => Some(
+                save_profile_image(Path::new(&photo_path), existing_photo.as_deref())
+                    .map(|p| p.to_string_lossy().to_string())?,
+            ),
+            None => existing_photo,
+        };
+
+    println!("{saved_profile_image_path:?} 000000");
     conn.execute(
         "UPDATE employees SET
             name = ?1, father_name = ?2, spouse_name = ?3, current_place = ?4,
@@ -232,7 +240,7 @@ pub fn update_employee(
             employee.joining_date,
             employee.exit_date,
             employee.essid,
-            saved_profile_image_path.map(|p| p.to_string_lossy().to_string()),
+            saved_profile_image_path,
             employee.date_of_birth,
             employee.uan,
             employee.esiip,

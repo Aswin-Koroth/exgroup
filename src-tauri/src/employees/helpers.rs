@@ -105,7 +105,6 @@ pub fn remove_employee_photo(conn: &rusqlite::Connection, employee_id: i64) -> R
         Some(path) => path,
         None => return Ok(()),
     };
-
     conn.execute(
         "UPDATE employees SET
                photo_path = NULL,

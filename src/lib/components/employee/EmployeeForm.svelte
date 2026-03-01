@@ -65,7 +65,7 @@
         joiningDate: initialData?.joiningDate || "",
         exitDate: initialData?.exitDate || "",
         essid: initialData?.essid || "",
-        photoPath: initialData?.photoPath || "",
+        photoPath: undefined,
         dateOfBirth: initialData?.dateOfBirth || "",
         uan: initialData?.uan || "",
         esiip: initialData?.esiip || "",
@@ -119,7 +119,7 @@
     }
 
     async function handleRemovePhoto() {
-        if (initialData?.id && formData.photoPath) {
+        if (initialData?.id) {
             await invoke("delete_employee_image", { id: initialData.id });
         }
         formData.photoPath = undefined;
