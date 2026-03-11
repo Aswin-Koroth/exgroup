@@ -5,6 +5,7 @@
     import { goto } from "$app/navigation";
     import logo from "$lib/assets/icon.png";
     import { isSidebarOpen } from "$lib/stores/navigation";
+    import { getVersion } from "@tauri-apps/api/app";
 
     interface NavItem {
         id: string;
@@ -22,9 +23,13 @@
             link: "/database",
         },
     ];
-
+    let appVersion = $state("");
     let activeRoute = $derived(page.url.pathname);
+    import { onMount } from "svelte";
 
+    onMount(async () => {
+        appVersion = await getVersion();
+    });
     function toggleSidebar() {
         $isSidebarOpen = !$isSidebarOpen;
     }
@@ -112,11 +117,11 @@
 
             {#if !$isSidebarOpen}
                 <div
-                    class="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50"
+                    class="absolute left-full ml-2 px-3 py-2 bg-primary text-white text-sm rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50"
                 >
                     {item.label}
                     <div
-                        class="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45"
+                        class="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 w-2 h-2 bg-primary rotate-45"
                     ></div>
                 </div>
             {/if}
@@ -127,9 +132,11 @@
 {#snippet version()}
     <div class="absolute bottom-4 left-0 right-0 px-3 select-none">
         {#if $isSidebarOpen}
-            <p class="text-xs text-gray-500 text-center">v1.1.0</p>
+            <p class="text-xs text-gray-500 text-center">v{appVersion}</p>
         {:else}
-            <p class="text-xs text-gray-500 text-center">v1</p>
+            <p class="text-xs text-gray-500 text-center">
+                v{appVersion.split(".")[0]}
+            </p>
         {/if}
     </div>
 {/snippet}
